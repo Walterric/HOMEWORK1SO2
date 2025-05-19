@@ -18,7 +18,6 @@ bool endswith(char *file)  //da mettere su header
     // Assuming file is a null-terminated string
     int fLen = strlen(file);
     char *ext = file + fLen - 2;
-     
     if (strcmp(ext, ".c") == 0) {
         return true;
     }
@@ -30,34 +29,15 @@ char *risolviInclude(FILE *fileIn)
 {
     char *buffer;
     char line[256];
+    char *start;
     while (fgets(line, sizeof(line), fileIn)) {
         if (strstr(line, "#include") != NULL) {
-            char *start;
-            // Process the include line
-            for (int i = 0; i < strlen(line); i++) {
-                if (line[i] == '<') {
-                    // Extract the file name between < and >
-                    char *start = line + i + 1;
-                    char *end = strchr(start, '>');
-                    if (end != NULL) {
-                        *end = '\0'; // Null-terminate the string
-                        break;
-                    }
-                }
-                else if (line[i] == '"') {
-                    // Extract the file name between " and "
-                    char *start = line + i + 1;
-                    char *end = strchr(start, '"');
-                    if (end != NULL) {
-                        *end = '\0'; // Null-terminate the string
-                        break;
-                    }
-                }
-            }
+            // Found an include line, process it
+            start = getInclude(line);
             // Write the include line to the output file
             FILE *fileH = fopen(start, "r");
             if (fileH == NULL) {
-                perror("Error opening file");
+                perror("Error opening file header");
                 return NULL;
             }
             buffer = incolla(fileH);
@@ -70,6 +50,7 @@ char *risolviInclude(FILE *fileIn)
 //incolla riga per riga gli include
 char *incolla(FILE *fileH)
 {
+    printf("incolla\n");
     int i = 1;
     fseek(fileH, 0, SEEK_END);
     size_t sizeFile = ftell(fileH);
@@ -91,4 +72,24 @@ char *incolla(FILE *fileH)
         strcat(buffer, line);
     }
     return buffer;
+}
+
+char *getInclude(char *line)
+{
+    char *start = strchr(line, '<');
+    if (start == NULL) {
+        start = strchr(line, '"');
+    }
+    if (start != NULL) {
+        start++;
+        char *end = strchr(start, '>');
+        if (end == NULL) {
+            end = strchr(start, '"');
+        }
+        if (end != NULL) {
+            *end = '\0'; // Null-terminate the string
+            return start;
+        }
+    }
+    return NULL;
 }

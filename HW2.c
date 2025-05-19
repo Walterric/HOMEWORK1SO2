@@ -19,18 +19,19 @@ int main(int argc, char *args[])
         help();
         return 0;
     }
-    else if(argc == 2) 
+    else if(argc == 2 ) 
     {
         //avvio con un file c
-        printf("%s", args[1]);
+        printf("%s\n", args[1]);
         if(endswith(args[1]) == false)
         {
             printf("Error: you can only put ¨file.c type¨ \n");
             return 1;
         }
         FILE *fileIn = fopen(args[1], "r");
+        // Check if the file was opened successfully
         if (fileIn == NULL) {
-            perror("Error opening file1");
+            perror("Error opening file input");
             return 1;
         }
         // Process the file here
@@ -48,7 +49,7 @@ int main(int argc, char *args[])
         }
         FILE *fileIn = fopen(args[2], "r");
         if (fileIn == NULL) {
-            perror("Error opening file");
+            perror("Error opening file input");
             exit(1);
         }
         // Process the file here
@@ -65,7 +66,7 @@ int main(int argc, char *args[])
         FILE *fileIn = fopen(args[2], "r");
         FILE *fileOut = fopen(args[4], "w");
         if (fileIn == NULL || fileOut == NULL) {
-            perror("Error opening file");
+            perror("Error opening file input");
             exit(1);
         }
         // Process the file here
@@ -82,7 +83,7 @@ int main(int argc, char *args[])
         FILE *fileIn = fopen(args[3], "r");
         FILE *fileOut = fopen(args[5], "w");
         if (fileIn == NULL || fileOut == NULL) {
-            perror("Error opening file");
+            perror("Error opening file input");
             exit(1);
         }
         // Process the file here
