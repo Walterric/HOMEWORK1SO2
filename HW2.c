@@ -35,7 +35,7 @@ int main(int argc, char *args[])
             return 1;
         }
         // Process the file here
-        char *outPut = risolviInclude(fileIn);//risolvi include
+        char *outPut = processaFile(fileIn);//risolvi include
         puts(outPut);
     return 0;
     }
