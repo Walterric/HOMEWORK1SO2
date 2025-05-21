@@ -29,10 +29,13 @@ bool endswith(char *file)  //da mettere su header
 char *risolviInclude(FILE *fileIn)
 {
     char *buffer;
-    char *buffalo = (char *)malloc(sizeof(char)*1);
-    char *line;
+    char *buffalo = (char *)malloc(1);
+    char line[256];
     char *start;
+    int i = 0;
     while (fgets(line, sizeof(line), fileIn)) {
+        printf("%d", i);
+        i++;    
         if (strstr(line, "#include") != NULL) {
             // Found an include line, process it
             start = getInclude(line);
@@ -47,10 +50,15 @@ char *risolviInclude(FILE *fileIn)
                 perror("Error allocating memory");
                 return NULL;
             }
-            int bufferSize = strlen(buffer);
-            buffalo = (char *)realloc(buffalo, sizeof(char)*(bufferSize+strlen(line)));
+            int newSize = strlen(buffer) + strlen(buffalo) + 1;
+            buffalo = realloc(buffalo, newSize);
+            if (buffalo == NULL) {
+                perror("Error reallocating memory");
+                free(buffer);
+                return NULL;
+            }
             strcat(buffalo, buffer);
-            free(buffer);
+            
         }
         else {
             /*check tyhe filesize   DEVI RIFARE AFFINCHE ELIMINA I COMMENTI E CERCA DI FARE ELIMINA COMMENTI SU UNA FUNZIONA APPARTE
@@ -66,6 +74,7 @@ char *risolviInclude(FILE *fileIn)
         }
 
     }
+    free(buffer);
     fclose(fileIn);
    return buffalo;
 }
@@ -100,7 +109,7 @@ char *incolla(FILE *file)
                 if (line != NULL) {
                     strcat(buffer, line);
                 }
-                bcomm = false;
+            bcomm = false;
             }
         }
         else if (strstr(line, "/*") != NULL) {
