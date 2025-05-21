@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "HW2.h"
 
+int globalCommCount = 0; //conta le rige di commento eliminate
 void help()
 {
     printf("Otions: \n1) -i/--in \n2) -o/--out \n3) -v/--verbose\n\n");
@@ -28,7 +29,8 @@ bool endswith(char *file)  //da mettere su header
 char *risolviInclude(FILE *fileIn)
 {
     char *buffer;
-    char line[256];
+    char *buffalo = (char *)malloc(sizeof(char)*1);
+    char *line;
     char *start;
     while (fgets(line, sizeof(line), fileIn)) {
         if (strstr(line, "#include") != NULL) {
@@ -41,35 +43,85 @@ char *risolviInclude(FILE *fileIn)
                 return NULL;
             }
             buffer = incolla(fileH);
-        }   
+            if (buffer == NULL) {
+                perror("Error allocating memory");
+                return NULL;
+            }
+            int bufferSize = strlen(buffer);
+            buffalo = (char *)realloc(buffalo, sizeof(char)*(bufferSize+strlen(line)));
+            strcat(buffalo, buffer);
+            free(buffer);
+        }
+        else {
+            /*check tyhe filesize   DEVI RIFARE AFFINCHE ELIMINA I COMMENTI E CERCA DI FARE ELIMINA COMMENTI SU UNA FUNZIONA APPARTE
+            int bufferSize = strlen(buffalo);
+            // Write the line to the output file
+            char *buffer1 = (char *)realloc(buffer,  sizeof(char)*(bufferSize+strlen(line)));
+            if (buffer1 == NULL) {
+                perror("Error allocating memory");
+                return NULL;
+            }
+            buffer = buffer1;
+            strcat(buffer, line);*/  //RICOMINCIARE MEGLIO 
+        }
+
     }
     fclose(fileIn);
-   return buffer;
+   return buffalo;
 }
 
-//incolla riga per riga gli include
-char *incolla(FILE *fileH)
+//incolla riga per riga gli include controlando i commenti
+char *incolla(FILE *file)
 {
-    printf("incolla\n");
-    int i = 1;
-    fseek(fileH, 0, SEEK_END);
-    size_t sizeFile = ftell(fileH);
-    rewind(fileH);
-    char line[256];
-    char *buffer = (char *)malloc(sizeof(char)*(sizeFile+i));
+    //CERCO LA GRANDEZZA DEL FILE
+    int sizeFile = getFSize(file);
+    if (sizeFile == -1) {
+        perror("Error getting file size");
+        return NULL;
+    }
+    
+    //creo un buffer grande quanto il file
+    
+    char *buffer = (char *)malloc(sizeof(char)*(sizeFile));
     if (buffer == NULL) {
-        perror("Error allocating memory");
+        perror("Error allocating memory (incolla)");
         return NULL;
     } 
-    while (fgets(line, sizeof(line), fileH)) {
-        i++;
-        char *buffer1 = realloc(buffer, sizeof(char)*(sizeFile+i));
-        if (buffer1 == NULL) {
-            perror("Error reallocating memory");
-            return NULL;
+
+    //da qui possibile separazione in una funzione separata
+    char *line;
+    bool bcomm = false;   // possibile variabile globale 
+    while (fgets(line, sizeof(line), file)) {
+        if(bcomm == true){
+            globalCommCount++;
+            if (strstr(line, "*/") != NULL) {
+            line = strstr(line, "*/");
+            line += 2; // Salta '*/'
+                if (line != NULL) {
+                    strcat(buffer, line);
+                }
+                bcomm = false;
+            }
         }
-        buffer = buffer1;
-        strcat(buffer, line);
+        else if (strstr(line, "/*") != NULL) {
+            globalCommCount++;
+            char *comment = strstr(line, "/*");
+            *comment = '\0'; // tronca la riga 
+            comment++;
+            if (*line != '\0')strcat(buffer, line); // incolla la riga senza commento 
+            if (strstr(comment, "*/") == NULL) {
+                bcomm = true;
+            }
+        else if (strstr(line, "//") != NULL) {
+            char *comment = strstr(line, "//");
+            *comment = '\0'; // tronca la riga 
+            if (*line != '\0')strcat(buffer, line); // incolla la riga senza commento
+            globalCommCount++;
+
+        }
+        } else {
+            strcat(buffer, line);
+        }
     }
     return buffer;
 }
@@ -93,3 +145,64 @@ char *getInclude(char *line)
     }
     return NULL;
 }
+
+int getFSize(FILE *fileH)
+{
+    fseek(fileH, 0, SEEK_END);
+    size_t sizeFile = ftell(fileH);
+    rewind(fileH);
+    return sizeFile;
+}
+
+
+//funzione di cristiano reintegrato nella funzione incolla.
+/*
+int rmcomm() {
+    FILE *in = fopen(argv[0], "r");
+    FILE *out = fopen(argv[1], "w");
+    int output[2];
+    int commcount = 0;
+    char riga[1024];
+    int comm = 0;
+    while (fgets(riga, 1024, in)) {
+        int len = strlen(riga);
+        int i = 0;
+        int rigacomm = 0;
+        while (i < len) {
+            if (comm) {
+                //Cerca la fine di un commento
+                if (i + 1 < len && riga[i] == '*' && riga[i + 1] == '/') {
+                    comm = 0;
+                    i += 2; //Salta '/*'
+                } else {
+                    rigacomm= 1;
+                    i++;
+                }
+            } else {
+                //Cerca l'inizio di un commento
+                if (i + 1 < len && riga[i] == '/' && riga[i + 1] == '*') {
+                    comm = 1;
+                    rigacomm = 1;
+                    i += 2; //Salta 
+                } else if (i + 1 < len && riga[i] == '/' && riga[i + 1] == '/') {
+                    rigacomm = 1;
+                    break; //Commento su una riga, salta il resto della riga
+                } else {
+                    if (riga[i] != '\n') {
+                        fprintf(out, "%c", riga[i]); //Stampa il carattere solo se non è newline
+                    }
+                    i++;
+                }
+            }
+        }
+        if (!comm && riga[len-1] == '\n'){
+            fprintf(out, "\n"); //Stampa un newline se non siamo in un commento a più righe
+        }
+        if (rigacomm) {
+            commcount++; //Conta righe di commenti eliminate
+        }
+    }
+    fclose(in);
+    fclose(out);
+    return commcount;
+}*/
