@@ -1,14 +1,11 @@
-
 char *processaFile(FILE *fileIn);
 bool endswith(char *file);
-void help();   //asd
-char *risolviInclude(FILE *fileH);
+void help();
+void risolviInclude(FILE *fileH);
 char *getInclude(char *line);
 void  processLine(char *line);
-extern int globalCommCount; //dio 
-
-
-
-/*akdJkm
-JLANSdfln
-*/
+bool checkVar(char *name);
+bool illegalChar(char *name);
+extern int globalCommCount; 
+extern int variableCount;
+extern int nFileIclude;
